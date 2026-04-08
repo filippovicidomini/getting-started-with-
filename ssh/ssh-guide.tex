@@ -1,0 +1,405 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+\geometry{margin=2.2cm}
+\setlength{\parskip}{0.6em}
+\setlength{\parindent}{0pt}
+\setlength{\headheight}{14pt}
+
+% --- Colori ---
+\definecolor{MainColor}{HTML}{1F4E79}
+\definecolor{AccentColor}{HTML}{2E86AB}
+\definecolor{SoftBlue}{HTML}{EAF4FB}
+\definecolor{SoftGray}{HTML}{F5F7FA}
+\definecolor{SoftGreen}{HTML}{EAF8F0}
+\definecolor{DarkText}{HTML}{1E1E1E}
+
+% --- Hyperref ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=MainColor,
+    urlcolor=AccentColor,
+    pdftitle={Guida moderna a SSH},
+    pdfauthor={}
+}
+
+% --- Titoli ---
+\titleformat{\section}
+  {\Large\bfseries\color{MainColor}}
+  {\thesection}{0.8em}{}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{AccentColor}}
+  {\thesubsection}{0.8em}{}
+
+% --- Header/Footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{MainColor}{Guida a SSH}}
+\fancyhead[R]{\textcolor{AccentColor}{Accesso remoto e tunnel}}
+\fancyfoot[C]{\thepage}
+
+% --- Box ---
+\newtcolorbox{infobox}{
+    colback=SoftBlue,
+    colframe=AccentColor,
+    boxrule=0.8pt,
+    arc=3mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\newtcolorbox{tipbox}{
+    colback=SoftGreen,
+    colframe=green!50!black,
+    boxrule=0.8pt,
+    arc=3mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\newtcolorbox{codebox}{
+    colback=SoftGray,
+    colframe=black!20,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\begin{document}
+
+% =========================
+% Titolo
+% =========================
+\vspace*{1.5cm}
+
+{\Huge\bfseries\color{MainColor} Guida a \texttt{SSH}} \\[0.4cm]
+{\Large\color{AccentColor} Connessioni sicure, chiavi, config e port forwarding}
+
+\vspace{1cm}
+
+\begin{infobox}
+\textbf{SSH (Secure Shell)} e il modo standard per collegarti a macchine remote in modo cifrato: login shell, esecuzione comandi, copia file e tunnel di rete.
+\end{infobox}
+
+\vspace{0.5cm}
+
+\begin{codebox}
+\textbf{Quick reference}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando & Descrizione \\
+\midrule
+ssh user@host & Connessione base \\
+ssh -p 2222 user@host & Connessione su porta diversa \\
+ssh -i \textasciitilde/.ssh/id\_ed25519 user@host & Specifica chiave \\
+ssh -v user@host & Debug connessione (verbose) \\
+ssh-keygen -t ed25519 & Genera coppia di chiavi \\
+ssh-add \textasciitilde/.ssh/id\_ed25519 & Carica chiave nell'agent \\
+scp file user@host:/path & Copia file su remoto \\
+ssh -L 8080:localhost:80 user@host & Tunnel locale (port forward) \\
+ssh -J bastion user@target & Jump host / bastion \\
+\bottomrule
+\end{tabularx}
+\end{codebox}
+
+\vspace{0.6cm}
+\tableofcontents
+\newpage
+
+% =========================
+\section{Cos'e SSH}
+\texttt{SSH} e un protocollo che ti permette di stabilire una connessione cifrata tra un client (il tuo computer) e un server remoto.
+
+In pratica lo userai per:
+\begin{itemize}[leftmargin=1.2cm]
+    \item entrare su un server e lavorare da shell;
+    \item eseguire comandi remoti;
+    \item trasferire file (\texttt{scp}, \texttt{sftp}, \texttt{rsync -e ssh});
+    \item creare tunnel di rete (port forwarding) per accedere a servizi non esposti.
+\end{itemize}
+
+\begin{tipbox}
+\textbf{Idea pratica:} se impari bene SSH, diventa la "colla" tra sviluppo locale, server e strumenti (Git, deploy, DB, dashboard interne).
+\end{tipbox}
+
+% =========================
+\section{Concetti fondamentali}
+\begin{infobox}
+\textbf{Client / Server} \\
+Il client e il comando \texttt{ssh} sul tuo computer. Il server e il demone \texttt{sshd} sulla macchina remota.
+
+\medskip
+\textbf{Porta} \\
+Di default SSH usa la porta \texttt{22}, ma spesso viene cambiata (es. \texttt{2222}).
+
+\medskip
+\textbf{Chiave pubblica / privata} \\
+Autenticazione moderna: la chiave privata resta sul client; la pubblica viene messa sul server in \texttt{\textasciitilde/.ssh/authorized\_keys}.
+
+\medskip
+\textbf{known\_hosts} \\
+Il file in cui il client salva le impronte dei server visitati per evitare attacchi man-in-the-middle.
+\end{infobox}
+
+Struttura mentale:
+\[
+\text{Client} \rightarrow \text{Server} \rightarrow \text{Autenticazione (password o chiavi)}
+\]
+
+% =========================
+\section{Primo utilizzo}
+\subsection{Connessione base}
+\begin{codebox}
+\texttt{ssh user@host}
+\end{codebox}
+
+Dove:
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{user} e l'utente sul server (es. \texttt{ubuntu}, \texttt{root}, \texttt{deploy});
+    \item \texttt{host} e un nome DNS o un IP.
+\end{itemize}
+
+\subsection{Porta diversa}
+\begin{codebox}
+\texttt{ssh -p 2222 user@host}
+\end{codebox}
+
+\subsection{Usare una chiave specifica}
+\begin{codebox}
+\texttt{ssh -i \textasciitilde/.ssh/id\_ed25519 user@host}
+\end{codebox}
+
+\begin{tipbox}
+\textbf{Consiglio:} se stai usando chiavi, punta a non passare \texttt{-i} ogni volta: metti la configurazione in \texttt{\textasciitilde/.ssh/config}.
+\end{tipbox}
+
+% =========================
+\section{Chiavi SSH (setup consigliato)}
+\subsection{Generare una chiave moderna (ed25519)}
+\begin{codebox}
+\texttt{ssh-keygen -t ed25519 -C "nome@azienda.com"}
+\end{codebox}
+
+Di default troverai:
+\begin{itemize}[leftmargin=1.2cm]
+    \item chiave privata: \texttt{\textasciitilde/.ssh/id\_ed25519}
+    \item chiave pubblica: \texttt{\textasciitilde/.ssh/id\_ed25519.pub}
+\end{itemize}
+
+\begin{infobox}
+\textbf{Passphrase:} mettila. E una protezione importante se la chiave privata viene copiata o rubata.
+\end{infobox}
+
+\subsection{Caricare la chiave nell'agent}
+\begin{codebox}
+\texttt{eval "\$(ssh-agent -s)"} \\
+\texttt{ssh-add \textasciitilde/.ssh/id\_ed25519}
+\end{codebox}
+
+Su macOS spesso e utile anche salvare la chiave nel portachiavi (opzionale):
+\begin{codebox}
+\texttt{ssh-add --apple-use-keychain \textasciitilde/.ssh/id\_ed25519}
+\end{codebox}
+
+% =========================
+\section{Aggiungere la chiave al server}
+\subsection{Metodo 1: ssh-copy-id (se disponibile)}
+\begin{codebox}
+\texttt{ssh-copy-id -i \textasciitilde/.ssh/id\_ed25519.pub user@host}
+\end{codebox}
+
+\subsection{Metodo 2: senza ssh-copy-id (compatibile ovunque)}
+\begin{codebox}
+\texttt{cat \textasciitilde/.ssh/id\_ed25519.pub | ssh user@host "mkdir -p \textasciitilde/.ssh \&\& cat >> \textasciitilde/.ssh/authorized\_keys"}
+\end{codebox}
+
+\begin{tipbox}
+\textbf{Check veloce:} dopo aver aggiunto la chiave, riprova \texttt{ssh user@host}. Se tutto e ok, non ti chiedera la password (ma potrebbe chiedere la passphrase della chiave).
+\end{tipbox}
+
+% =========================
+\section{Configurare \texttt{\textasciitilde/.ssh/config}}
+Con \texttt{\textasciitilde/.ssh/config} puoi creare alias e standardizzare porte, user e chiavi.
+
+Esempio:
+\begin{codebox}
+\texttt{Host myserver} \\
+\texttt{  HostName 203.0.113.10} \\
+\texttt{  User ubuntu} \\
+\texttt{  Port 2222} \\
+\texttt{  IdentityFile \textasciitilde/.ssh/id\_ed25519} \\
+\texttt{  IdentitiesOnly yes}
+\end{codebox}
+
+Da quel momento:
+\begin{codebox}
+\texttt{ssh myserver}
+\end{codebox}
+
+\begin{infobox}
+\textbf{IdentitiesOnly yes} evita tentativi con troppe chiavi (errore tipico: \texttt{Too many authentication failures}).
+\end{infobox}
+
+% =========================
+\section{Copia file: scp e rsync}
+\subsection{scp (semplice)}
+\begin{codebox}
+\texttt{scp file.txt user@host:/tmp/} \\
+\texttt{scp -r cartella/ user@host:/var/www/}
+\end{codebox}
+
+\subsection{rsync (piu efficiente su cartelle grandi)}
+\begin{codebox}
+\texttt{rsync -av --progress -e ssh cartella/ user@host:/var/www/}
+\end{codebox}
+
+% =========================
+\section{Port forwarding (tunnel)}
+Il port forwarding serve per "portare" un servizio remoto in locale (o viceversa) senza esporlo pubblicamente.
+
+\subsection{Tunnel locale (\texttt{-L})}
+Esempio: hai un servizio sul server su \texttt{localhost:80} e vuoi vederlo in locale su \texttt{localhost:8080}.
+\begin{codebox}
+\texttt{ssh -L 8080:localhost:80 user@host}
+\end{codebox}
+
+\subsection{Tunnel remoto (\texttt{-R})}
+Esempio: vuoi esporre una porta locale (es. \texttt{3000}) sul server remoto.
+\begin{codebox}
+\texttt{ssh -R 3000:localhost:3000 user@host}
+\end{codebox}
+
+\subsection{SOCKS proxy (\texttt{-D})}
+Crea un proxy SOCKS locale (utile per navigare tramite il server):
+\begin{codebox}
+\texttt{ssh -D 1080 user@host}
+\end{codebox}
+
+\begin{tipbox}
+\textbf{Consiglio:} aggiungi \texttt{-N} quando ti serve solo il tunnel (senza aprire shell).
+\end{tipbox}
+
+% =========================
+\section{Jump host (bastion)}
+Quando il server target non e direttamente raggiungibile, passi da un bastion.
+
+\subsection{Usare \texttt{-J}}
+\begin{codebox}
+\texttt{ssh -J user@bastion user@target}
+\end{codebox}
+
+\subsection{Configurazione con ProxyJump}
+\begin{codebox}
+\texttt{Host bastion} \\
+\texttt{  HostName 198.51.100.10} \\
+\texttt{  User ubuntu} \\
+\texttt{Host target} \\
+\texttt{  HostName 10.0.1.25} \\
+\texttt{  User ubuntu} \\
+\texttt{  ProxyJump bastion}
+\end{codebox}
+
+% =========================
+\section{Troubleshooting veloce}
+\subsection{Debug con verbose}
+\begin{codebox}
+\texttt{ssh -v user@host} \\
+\texttt{ssh -vvv user@host}
+\end{codebox}
+
+\subsection{Errori tipici}
+\begin{infobox}
+\textbf{Permission denied (publickey)} \\
+La chiave non e sul server, oppure stai usando la chiave sbagliata.
+
+\medskip
+\textbf{Host key verification failed} \\
+Il server e cambiato (o la chiave in \texttt{known\_hosts} non coincide). Verifica prima di rimuovere l'entry.
+
+\medskip
+\textbf{Connection refused / timed out} \\
+Porta sbagliata, firewall, o \texttt{sshd} non in ascolto.
+\end{infobox}
+
+\subsection{Permessi della cartella \texttt{.ssh}}
+Su molti server, permessi troppo aperti bloccano l'autenticazione a chiave.
+\begin{codebox}
+\texttt{chmod 700 \textasciitilde/.ssh} \\
+\texttt{chmod 600 \textasciitilde/.ssh/authorized\_keys}
+\end{codebox}
+
+% =========================
+\section{Cheat sheet veloce}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando & Significato \\
+\midrule
+ssh user@host & Login remoto \\
+ssh -p 2222 user@host & Porta custom \\
+ssh -i key user@host & Specifica chiave \\
+ssh -v user@host & Verbose (debug) \\
+ssh-keygen -t ed25519 & Genera chiave \\
+ssh-add key & Carica chiave nell'agent \\
+scp file user@host:/path & Copia file \\
+rsync -e ssh src/ user@host:dst/ & Sync efficiente \\
+ssh -L lport:host:rport user@host & Tunnel locale \\
+ssh -R rport:host:lport user@host & Tunnel remoto \\
+ssh -D 1080 user@host & SOCKS proxy \\
+ssh -J bastion user@target & Jump host \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =========================
+\section{Errori comuni dei principianti}
+\begin{infobox}
+\textbf{1. Riutilizzare la stessa chiave ovunque} \\
+Meglio chiavi separate per contesti diversi (lavoro, personale, produzione).
+
+\medskip
+\textbf{2. Usare \texttt{root} direttamente} \\
+Preferisci un utente normale + \texttt{sudo} (quando serve).
+
+\medskip
+\textbf{3. Disabilitare i controlli di sicurezza a caso} \\
+Evitare di forzare \texttt{StrictHostKeyChecking no} senza capire cosa implica.
+\end{infobox}
+
+% =========================
+\section{Conclusione}
+\texttt{SSH} e uno strumento semplice all'apparenza, ma potentissimo quando lo usi bene: chiavi + config + tunnel.
+
+\begin{tipbox}
+\textbf{Da ricordare:}
+\begin{itemize}[leftmargin=1.2cm]
+    \item usa chiavi \texttt{ed25519} con passphrase;
+    \item centralizza alias e opzioni in \texttt{\textasciitilde/.ssh/config};
+    \item usa i tunnel per accedere a servizi interni senza esporli;
+    \item se qualcosa non funziona: \texttt{ssh -v} e controlla permessi.
+\end{itemize}
+\end{tipbox}
+
+\vfill
+\begin{center}
+\textcolor{AccentColor}{\large Buon lavoro con \texttt{SSH}}
+\end{center}
+
+\end{document}
