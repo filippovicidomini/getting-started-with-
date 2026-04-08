@@ -1,0 +1,401 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+\geometry{margin=2.2cm}
+\setlength{\parskip}{0.6em}
+\setlength{\parindent}{0pt}
+\setlength{\headheight}{14pt}
+
+% --- Colori ---
+\definecolor{MainColor}{HTML}{1F4E79}
+\definecolor{AccentColor}{HTML}{2E86AB}
+\definecolor{SoftBlue}{HTML}{EAF4FB}
+\definecolor{SoftGray}{HTML}{F5F7FA}
+\definecolor{SoftGreen}{HTML}{EAF8F0}
+\definecolor{DarkText}{HTML}{1E1E1E}
+
+% --- Hyperref ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=MainColor,
+    urlcolor=AccentColor,
+    pdftitle={Guida moderna a GitHub},
+    pdfauthor={}
+}
+
+% --- Titoli ---
+\titleformat{\section}
+  {\Large\bfseries\color{MainColor}}
+  {\thesection}{0.8em}{}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{AccentColor}}
+  {\thesubsection}{0.8em}{}
+
+% --- Header/Footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{MainColor}{Guida a GitHub}}
+\fancyhead[R]{\textcolor{AccentColor}{Version control e collaborazione}}
+\fancyfoot[C]{\thepage}
+
+% --- Box ---
+\newtcolorbox{infobox}{
+    colback=SoftBlue,
+    colframe=AccentColor,
+    boxrule=0.8pt,
+    arc=3mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\newtcolorbox{tipbox}{
+    colback=SoftGreen,
+    colframe=green!50!black,
+    boxrule=0.8pt,
+    arc=3mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\newtcolorbox{codebox}{
+    colback=SoftGray,
+    colframe=black!20,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\begin{document}
+
+% =========================
+% Titolo
+% =========================
+\vspace*{1.5cm}
+
+{\Huge\bfseries\color{MainColor} Guida a \texttt{GitHub}} \\[0.4cm]
+{\Large\color{AccentColor} Dalle basi al workflow collaborativo completo}
+
+\vspace{1cm}
+
+\begin{infobox}
+\textbf{GitHub} e la piattaforma dove pubblichi repository Git, collabori tramite pull request, tieni traccia del lavoro con issue e automatizzi con Actions.
+\end{infobox}
+
+\vspace{0.5cm}
+
+\begin{codebox}
+\textbf{Quick reference}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando / Azione & Descrizione \\
+\midrule
+git clone URL & Clona repository in locale \\
+git checkout -b feature/nome & Crea e apre un branch \\
+git add . & Aggiunge modifiche allo staging \\
+git commit -m "messaggio" & Crea un commit \\
+git push -u origin feature/nome & Pubblica branch su GitHub \\
+Pull Request & Richiesta di merge su GitHub \\
+git pull --rebase origin main & Allinea il branch locale \\
+git fetch --all --prune & Aggiorna i riferimenti remoti \\
+Issue & Traccia bug, task e richieste \\
+Actions & Esegue CI/CD automatizzata \\
+\bottomrule
+\end{tabularx}
+\end{codebox}
+
+\vspace{0.6cm}
+\tableofcontents
+\newpage
+
+% =========================
+\section{Cos'e GitHub}
+\texttt{GitHub} e un servizio cloud basato su \texttt{Git}. Git e il motore di versionamento; GitHub aggiunge collaborazione e strumenti di team.
+
+GitHub e utile quando:
+\begin{itemize}[leftmargin=1.2cm]
+    \item vuoi salvare e versionare codice in remoto;
+    \item lavori in gruppo su branch separati;
+    \item vuoi revisionare modifiche prima del merge;
+    \item vuoi automatizzare test e deploy.
+\end{itemize}
+
+\begin{tipbox}
+\textbf{Idea pratica:} usa Git in locale per sviluppare e GitHub per condividere, revisionare e integrare.
+\end{tipbox}
+
+% =========================
+\section{I concetti fondamentali}
+\begin{infobox}
+\textbf{Repository} \\
+Contenitore del progetto (codice, storia commit, file di configurazione).
+
+\medskip
+\textbf{Branch} \\
+Linea di sviluppo separata, utile per feature o fix.
+
+\medskip
+\textbf{Commit} \\
+Snapshot coerente delle modifiche.
+
+\medskip
+\textbf{Pull Request (PR)} \\
+Richiesta di revisione e merge di un branch su un altro.
+
+\medskip
+\textbf{Issue} \\
+Ticket per bug, task, idee o discussioni operative.
+\end{infobox}
+
+Struttura mentale:
+\[
+\text{Repository} \rightarrow \text{Branch} \rightarrow \text{Commit} \rightarrow \text{Pull Request}
+\]
+
+% =========================
+\section{Setup iniziale}
+\subsection{Configura Git}
+\begin{codebox}
+\texttt{git config --global user.name "Nome Cognome"} \\
+\texttt{git config --global user.email "mail@example.com"}
+\end{codebox}
+
+\subsection{Genera una chiave SSH}
+\begin{codebox}
+\texttt{ssh-keygen -t ed25519 -C "mail@example.com"} \\
+\texttt{cat \~/.ssh/id\_ed25519.pub}
+\end{codebox}
+
+Copia la chiave pubblica e aggiungila su GitHub in:
+\begin{codebox}
+\texttt{Settings > SSH and GPG keys}
+\end{codebox}
+
+\subsection{Test connessione}
+\begin{codebox}
+\texttt{ssh -T git@github.com}
+\end{codebox}
+
+% =========================
+\section{Primo flusso di lavoro}
+\subsection{Clona il repository}
+\begin{codebox}
+\texttt{git clone git@github.com:org/progetto.git} \\
+\texttt{cd progetto}
+\end{codebox}
+
+\subsection{Crea un branch di lavoro}
+\begin{codebox}
+\texttt{git checkout -b feature/login}
+\end{codebox}
+
+\subsection{Lavora e salva}
+\begin{codebox}
+\texttt{git add .} \\
+\texttt{git commit -m "feat: aggiunge login base"}
+\end{codebox}
+
+\subsection{Pubblica su GitHub}
+\begin{codebox}
+\texttt{git push -u origin feature/login}
+\end{codebox}
+
+Poi, su GitHub, apri una \textbf{Pull Request} verso \texttt{main}.
+
+% =========================
+\section{Pull Request fatta bene}
+Una PR efficace riduce tempi di review e problemi in merge.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Elemento & Buona pratica \\
+\midrule
+Titolo & Breve, orientato al risultato \\
+Descrizione & Cosa cambia, perche, impatti \\
+Scope & Piccolo e focalizzato \\
+Checklist & Test, lint, documentazione \\
+Reviewers & Assegna le persone giuste \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{tipbox}
+\textbf{Consiglio utile:} prima di aprire la PR, aggiorna il branch con \texttt{main} per ridurre conflitti.
+\end{tipbox}
+
+% =========================
+\section{Aggiornare il branch senza caos}
+\subsection{Allinea il locale}
+\begin{codebox}
+\texttt{git checkout main} \\
+\texttt{git pull origin main}
+\end{codebox}
+
+\subsection{Porta le novita sul branch feature}
+\begin{codebox}
+\texttt{git checkout feature/login} \\
+\texttt{git rebase main}
+\end{codebox}
+
+Se ci sono conflitti:
+\begin{enumerate}[leftmargin=1.2cm]
+    \item risolvi i file;
+    \item esegui \texttt{git add <file>};
+    \item continua con \texttt{git rebase --continue}.
+\end{enumerate}
+
+Al termine, aggiorna il remoto:
+\begin{codebox}
+\texttt{git push --force-with-lease}
+\end{codebox}
+
+% =========================
+\section{Issue e organizzazione}
+Le \textbf{Issue} sono il punto di ingresso del lavoro.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Strumento & Uso pratico \\
+\midrule
+Issue template & Standardizza bug report e task \\
+Label & Classifica priorita e tipo lavoro \\
+Milestone & Raggruppa task per release \\
+Project board & Stato operativo (todo/doing/done) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{infobox}
+\textbf{Regola semplice:} ogni PR dovrebbe riferirsi a una issue, cosi il contesto resta chiaro nel tempo.
+\end{infobox}
+
+% =========================
+\section{README minimo consigliato}
+Un buon repository ha almeno:
+\begin{itemize}[leftmargin=1.2cm]
+    \item descrizione breve del progetto;
+    \item prerequisiti;
+    \item istruzioni di installazione e avvio;
+    \item esempi d'uso;
+    \item sezione contributi.
+\end{itemize}
+
+\begin{codebox}
+\texttt{\# Nome progetto} \\
+\texttt{Descrizione breve} \\
+\texttt{\#\# Setup} \\
+\texttt{\#\# Uso} \\
+\texttt{\#\# Contribuire}
+\end{codebox}
+
+% =========================
+\section{GitHub Actions in 60 secondi}
+\texttt{GitHub Actions} serve per CI/CD: test automatici, lint, build e deploy.
+
+File tipico:
+\begin{codebox}
+\texttt{.github/workflows/ci.yml}
+\end{codebox}
+
+Schema base:
+\begin{itemize}[leftmargin=1.2cm]
+    \item trigger su \texttt{push} e \texttt{pull\_request};
+    \item job con checkout codice;
+    \item install dipendenze;
+    \item esecuzione test/lint.
+\end{itemize}
+
+% =========================
+\section{Cheat sheet veloce}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando / Azione & Significato \\
+\midrule
+git clone URL & Clona repository \\
+git status & Mostra stato working tree \\
+git checkout -b nome & Nuovo branch \\
+git add . & Prepara modifiche per commit \\
+git commit -m "msg" & Salva snapshot \\
+git push -u origin nome & Pubblica branch \\
+git pull --rebase origin main & Aggiorna branch locale \\
+git fetch --all --prune & Pulisce riferimenti remoti vecchi \\
+git log --oneline --graph & Cronologia compatta \\
+Open Pull Request & Chiede review e merge \\
+Merge Pull Request & Integra branch in target \\
+Close Issue & Chiude task completato \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =========================
+\section{Errori comuni dei principianti}
+\begin{infobox}
+\textbf{1. Commit troppo grandi} \\
+Rendono difficile capire, revieware e fare rollback.
+
+\medskip
+\textbf{2. Lavorare direttamente su main} \\
+Meglio usare branch dedicati per ogni cambiamento.
+
+\medskip
+\textbf{3. Messaggi commit vaghi} \\
+Evita "fix" o "update": scrivi cosa e perche.
+
+\medskip
+\textbf{4. Aprire PR senza contesto} \\
+Descrivi sempre obiettivo, test fatti e impatti.
+\end{infobox}
+
+% =========================
+\section{Workflow consigliato in team}
+\begin{enumerate}[leftmargin=1.2cm]
+    \item Apri issue con obiettivo chiaro.
+    \item Crea branch da \texttt{main}.
+    \item Fai commit piccoli e descrittivi.
+    \item Pubblica branch e apri PR.
+    \item Ricevi review e applica feedback.
+    \item Esegui merge e chiudi issue.
+\end{enumerate}
+
+% =========================
+\section{Conclusione}
+\texttt{GitHub} diventa potente quando usi un flusso ordinato: branch puliti, PR piccole, review serie e automazioni CI.
+
+\begin{tipbox}
+\textbf{Da ricordare:}
+\begin{itemize}[leftmargin=1.2cm]
+    \item separa sempre il lavoro in branch;
+    \item apri PR leggibili e testate;
+    \item usa issue per tracciare decisioni e task;
+    \item automatizza il controllo qualita con Actions.
+\end{itemize}
+\end{tipbox}
+
+\vfill
+\begin{center}
+\textcolor{AccentColor}{\large Buon lavoro con \texttt{GitHub}}
+\end{center}
+
+\end{document}
