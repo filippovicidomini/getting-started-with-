@@ -1,0 +1,455 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+\geometry{margin=2.2cm}
+\setlength{\parskip}{0.6em}
+\setlength{\parindent}{0pt}
+
+% --- Colori ---
+\definecolor{MainColor}{HTML}{1F4E79}
+\definecolor{AccentColor}{HTML}{2E86AB}
+\definecolor{SoftBlue}{HTML}{EAF4FB}
+\definecolor{SoftGray}{HTML}{F5F7FA}
+\definecolor{SoftGreen}{HTML}{EAF8F0}
+\definecolor{DarkText}{HTML}{1E1E1E}
+
+% --- Hyperref ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=MainColor,
+    urlcolor=AccentColor,
+    pdftitle={Guida moderna a tmux},
+    pdfauthor={}
+}
+
+% --- Titoli ---
+\titleformat{\section}
+  {\Large\bfseries\color{MainColor}}
+  {\thesection}{0.8em}{}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{AccentColor}}
+  {\thesubsection}{0.8em}{}
+
+% --- Header/Footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{MainColor}{Guida a tmux}}
+\fancyhead[R]{\textcolor{AccentColor}{Terminal multiplexer}}
+\fancyfoot[C]{\thepage}
+
+% --- Box ---
+\newtcolorbox{infobox}{
+    colback=SoftBlue,
+    colframe=AccentColor,
+    boxrule=0.8pt,
+    arc=3mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\newtcolorbox{tipbox}{
+    colback=SoftGreen,
+    colframe=green!50!black,
+    boxrule=0.8pt,
+    arc=3mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+\newtcolorbox{codebox}{
+    colback=SoftGray,
+    colframe=black!20,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=2mm,right=2mm,top=2mm,bottom=2mm
+}
+
+% --- Comando rapido ---
+\newcommand{\shortcut}[2]{\texttt{#1} & #2 \\}
+
+\begin{document}
+
+% =========================
+% Titolo
+% =========================
+\vspace*{1.5cm}
+
+{\Huge\bfseries\color{MainColor} Guida  a \texttt{tmux}} \\[0.4cm]
+{\Large\color{AccentColor} Per iniziare e per avere sempre i comandi a portata di mano}
+
+
+\vspace{1cm}
+
+\begin{infobox}
+\textbf \texttt{tmux} ti permette di aprire più terminali, dividerli in pannelli, scollegarti senza fermare i processi e riprendere tutto in un secondo momento.
+\end{infobox}
+
+\vspace{0.5cm}
+
+\begin{codebox}
+\textbf{Quick reference}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando & Descrizione \\
+\midrule
+ tmux new -s nome & Creazione sessione \\
+ tmux ls & Lista sessioni \\
+ tmux attach -t nome & Attach a sessione \\
+ Ctrl+b d & Detach sessione \\
+ Ctrl+b c & Nuova finestra \\
+ Ctrl+b \% & Split verticale \\
+ Ctrl+b " & Split orizzontale \\
+ Ctrl+b frecce & Navigazione pannelli \\
+ Ctrl+b x & Chiusura pannello \\
+ Ctrl+b ? & Help \\
+\bottomrule
+\end{tabularx}
+\end{codebox}
+
+\vspace{0.6cm}
+\tableofcontents
+\newpage
+
+% =========================
+\section{Cos'è tmux}
+\texttt{tmux} è un \textbf{terminal multiplexer}, cioè uno strumento che ti consente di lavorare con più shell dentro una sola sessione di terminale.
+
+È particolarmente utile quando:
+\begin{itemize}[leftmargin=1.2cm]
+    \item devi lanciare processi lunghi;
+    \item lavori su server remoti tramite SSH;
+    \item vuoi dividere il terminale in più aree;
+    \item vuoi chiudere il terminale senza interrompere ciò che sta girando.
+\end{itemize}
+
+\begin{tipbox}
+\textbf{Idea pratica:} puoi avviare un training, uno script o una compilazione dentro \texttt{tmux}, scollegarti, e poi rientrare più tardi trovando tutto ancora attivo.
+\end{tipbox}
+
+% =========================
+\section{I tre concetti fondamentali}
+Per usare bene \texttt{tmux}, basta capire tre oggetti:
+
+\begin{infobox}
+\textbf{Sessione} \\
+È il contenitore principale. Puoi pensarla come un workspace completo.
+
+\medskip
+\textbf{Finestra (window)} \\
+È simile a una scheda del browser: una sessione può avere più finestre.
+
+\medskip
+\textbf{Pannello (pane)} \\
+È una divisione della finestra. Una finestra può essere spezzata in più parti.
+\end{infobox}
+
+Quindi la struttura mentale è:
+
+\[
+\text{Sessione} \rightarrow \text{Finestre} \rightarrow \text{Pannelli}
+\]
+
+% =========================
+\section{Primo utilizzo}
+\subsection{Avviare tmux}
+\begin{codebox}
+\texttt{tmux}
+\end{codebox}
+
+Questo apre una nuova sessione.
+
+\subsection{Creare una sessione con nome}
+\begin{codebox}
+\texttt{tmux new -s lavoro}
+\end{codebox}
+
+Qui \texttt{lavoro} è il nome della sessione. Dare un nome è molto utile, soprattutto se lavori su più progetti.
+
+\subsection{Vedere le sessioni attive}
+\begin{codebox}
+\texttt{tmux ls}
+\end{codebox}
+
+\subsection{Rientrare in una sessione}
+\begin{codebox}
+\texttt{tmux attach -t lavoro}
+\end{codebox}
+
+% =========================
+\section{Il prefisso dei comandi}
+Quasi tutti gli shortcut di \texttt{tmux} iniziano con un \textbf{prefisso}. Di default il prefisso è:
+
+\begin{center}
+\Large \texttt{Ctrl+b}
+\end{center}
+
+Questo significa che molti comandi si usano così:
+\begin{itemize}[leftmargin=1.2cm]
+    \item premi \texttt{Ctrl+b}
+    \item rilascia
+    \item premi il tasto del comando
+\end{itemize}
+
+Per esempio:
+\begin{codebox}
+\texttt{Ctrl+b} poi \texttt{c}
+\end{codebox}
+crea una nuova finestra.
+
+% =========================
+\section{Comandi essenziali}
+\subsection{Staccarsi dalla sessione senza chiuderla}
+\begin{codebox}
+\texttt{Ctrl+b} poi \texttt{d}
+\end{codebox}
+
+Questo comando fa il \textbf{detach}: esci dalla sessione ma i processi continuano a girare.
+
+\subsection{Chiudere davvero un pannello o una finestra}
+Per chiudere un pannello o una finestra, in genere basta uscire dalla shell:
+\begin{codebox}
+\texttt{exit}
+\end{codebox}
+
+oppure usare:
+\begin{codebox}
+\texttt{Ctrl+d}
+\end{codebox}
+
+% =========================
+\section{Finestre}
+Le finestre servono a separare attività diverse: per esempio editor, log, training, shell principale.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando & Funzione \\
+\midrule
+Ctrl+b c & Crea una nuova finestra \\
+Ctrl+b n & Va alla finestra successiva \\
+Ctrl+b p & Va alla finestra precedente \\
+Ctrl+b w & Mostra la lista delle finestre \\
+Ctrl+b , & Rinomina la finestra corrente \\
+Ctrl+b 0...9 & Va direttamente alla finestra con quel numero \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{tipbox}
+\textbf{Consiglio utile:} rinomina le finestre con nomi come \texttt{editor}, \texttt{logs}, \texttt{train}, \texttt{server}. Ti orienti molto meglio.
+\end{tipbox}
+
+% =========================
+\section{Pannelli}
+I pannelli sono molto comodi quando vuoi vedere più terminali contemporaneamente nella stessa finestra.
+
+\subsection{Dividere lo schermo}
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando & Funzione \\
+\midrule
+Ctrl+b \% & Divide verticalmente \\
+Ctrl+b " & Divide orizzontalmente \\
+Ctrl+b frecce & Passa al pannello vicino \\
+Ctrl+b x & Chiude il pannello corrente \\
+Ctrl+b z & Ingrandisce/riduce il pannello corrente \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Idea pratica}
+Una disposizione classica può essere:
+\begin{itemize}[leftmargin=1.2cm]
+    \item pannello sinistro: editor o shell principale;
+    \item pannello in alto a destra: esecuzione script;
+    \item pannello in basso a destra: log o monitoraggio.
+\end{itemize}
+
+% =========================
+\section{Sessioni}
+Le sessioni sono la vera forza di \texttt{tmux}.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Comando & Funzione \\
+\midrule
+tmux new -s nome & Crea una nuova sessione con nome \\
+tmux ls & Elenca le sessioni attive \\
+tmux attach -t nome & Si collega a una sessione esistente \\
+Ctrl+b d & Si scollega dalla sessione senza fermarla \\
+Ctrl+b s & Mostra le sessioni disponibili \\
+tmux kill-session -t nome & Chiude completamente una sessione \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{infobox}
+\textbf{Detach} non significa chiudere. \\
+Significa solo uscire temporaneamente dalla sessione lasciandola viva.
+\end{infobox}
+
+% =========================
+\section{Workflow tipico}
+Questa è una sequenza molto comune nell'uso reale.
+
+\subsection{Caso: lanciare un processo lungo}
+\begin{enumerate}[leftmargin=1.2cm]
+    \item Crea una sessione:
+\begin{codebox}
+\texttt{tmux new -s esperimento}
+\end{codebox}
+
+    \item Avvia il comando che durerà a lungo:
+\begin{codebox}
+\texttt{python train.py}
+\end{codebox}
+
+    \item Staccati:
+\begin{codebox}
+\texttt{Ctrl+b} poi \texttt{d}
+\end{codebox}
+
+    \item Più tardi rientra:
+\begin{codebox}
+\texttt{tmux attach -t esperimento}
+\end{codebox}
+\end{enumerate}
+
+Questo è uno degli usi più importanti di \texttt{tmux}.
+
+% =========================
+\section{Cheat sheet veloce}
+Questa sezione è pensata per chi vuole ricordare rapidamente i comandi principali.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\ttfamily}l X}
+\toprule
+Shortcut / comando & Significato \\
+\midrule
+tmux & Avvia una sessione nuova \\
+tmux new -s nome & Crea una sessione con nome \\
+tmux ls & Elenca le sessioni \\
+tmux attach -t nome & Rientra in una sessione \\
+Ctrl+b d & Detach dalla sessione \\
+Ctrl+b c & Nuova finestra \\
+Ctrl+b n & Finestra successiva \\
+Ctrl+b p & Finestra precedente \\
+Ctrl+b \% & Split verticale \\
+Ctrl+b " & Split orizzontale \\
+Ctrl+b frecce & Muoversi tra pannelli \\
+Ctrl+b x & Chiudere il pannello \\
+Ctrl+b z & Zoom del pannello \\
+Ctrl+b w & Lista finestre \\
+Ctrl+b s & Lista sessioni \\
+Ctrl+b ? & Aiuto interno di tmux \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =========================
+\section{Comandi utili da ricordare}
+\subsection{Aiuto interno}
+\begin{codebox}
+\texttt{Ctrl+b} poi \texttt{?}
+\end{codebox}
+
+Mostra la lista dei comandi disponibili dentro \texttt{tmux}.
+
+\subsection{Modalità copia}
+In molte configurazioni, \texttt{tmux} supporta una modalità di scroll e copia. Anche se all'inizio può non servirti, è bene sapere che esiste.
+
+\subsection{Mouse}
+Puoi abilitare il mouse nella configurazione per:
+\begin{itemize}[leftmargin=1.2cm]
+    \item cambiare pannello con un clic;
+    \item ridimensionare pannelli;
+    \item scorrere meglio.
+\end{itemize}
+
+% =========================
+\section{Configurazione minima consigliata}
+Nel file:
+\begin{codebox}
+\texttt{\~/.tmux.conf}
+\end{codebox}
+
+puoi aggiungere una configurazione base come questa:
+
+\begin{codebox}
+\texttt{set -g mouse on} \\
+\texttt{set -g history-limit 10000}
+\end{codebox}
+
+\textbf{Cosa fanno:}
+\begin{itemize}[leftmargin=1.2cm]
+    \item \texttt{mouse on}: abilita il supporto al mouse;
+    \item \texttt{history-limit 10000}: aumenta la cronologia del terminale.
+\end{itemize}
+
+% =========================
+\section{Errori comuni dei principianti}
+\begin{infobox}
+\textbf{1. Pensare che chiudere il terminale chiuda tutto} \\
+No: se il processo è dentro una sessione \texttt{tmux} attiva, puoi rientrare dopo.
+
+\medskip
+\textbf{2. Confondere sessione, finestra e pannello} \\
+Sessione = contenitore grande; finestra = tab; pannello = divisione.
+
+\medskip
+\textbf{3. Dimenticare il prefisso} \\
+Se uno shortcut non funziona, probabilmente manca prima \texttt{Ctrl+b}.
+\end{infobox}
+
+% =========================
+\section{Quando usare tmux}
+\begin{itemize}[leftmargin=1.2cm]
+    \item quando lavori su server remoti;
+    \item quando lanci script lunghi;
+    \item quando vuoi più terminali nello stesso spazio;
+    \item quando vuoi organizzare meglio il lavoro da shell.
+\end{itemize}
+
+% =========================
+\section{Conclusione}
+\texttt{tmux} all'inizio può sembrare un po' strano, ma dopo poche ore diventa uno strumento estremamente naturale.
+
+\begin{tipbox}
+\textbf{Da ricordare:}
+\begin{itemize}[leftmargin=1.2cm]
+    \item crea una sessione con nome;
+    \item usa finestre per separare i compiti;
+    \item usa pannelli per vedere più terminali insieme;
+    \item fai detach quando vuoi uscire senza interrompere nulla.
+\end{itemize}
+\end{tipbox}
+
+\vfill
+\begin{center}
+\textcolor{AccentColor}{\large Buon lavoro con \texttt{tmux}}
+\end{center}
+
+\end{document}
